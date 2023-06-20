@@ -120,10 +120,10 @@ static __always_inline enum nb_action nb_swap_addr(struct nb_context *ctx)
 #define NB_MAX_IP_HDR_LEN 40
 #define NB_IP_TOA_OP      254
 
-static __always_inline enum nb_action nb_tc_extend_toa(struct nb_context *ctx);
+static __always_inline enum nb_action nb_tc_extend_toa(struct nb_context *ctx)
 {
     if (ctx->l4_proto != IPPROTO_TCP || ctx->is_ipv6) {
-        return NB_ACT_OK
+        return NB_ACT_OK;
     }
     struct iphdr *iph = (struct iphdr*)ctx->l3h;
     if ((void*)(iph + 1) > ctx->end) {
@@ -151,7 +151,7 @@ static __always_inline enum nb_action nb_tc_extend_toa(struct nb_context *ctx);
     new_doff[0]  = *(((__u16*)&tcph->ack_seq) + 2);
     long ret     = bpf_skb_change_tail(ctx->stack_ctx, old_pkglen + sizeof(struct nb_toa), 0);
     if (ret != 0) {
-        retuc NB_ACT_DROP;
+        return NB_ACT_DROP;
     }
 
     ctx->end   = (void*)(long)((struct __sk_buff*)ctx->stack_ctx)->data_end;
@@ -197,9 +197,9 @@ static __always_inline enum nb_action nb_tc_extend_toa(struct nb_context *ctx);
 
     cs            = tcph->check;
     __u16 payload = tcphdr_len;
-    old_doff[1]   = bpf_htons(playload);
+    old_doff[1]   = bpf_htons(payload);
     payload      += sizeof(struct nb_toa);
-    new_doff[1]   = bpf_htons(playload);
+    new_doff[1]   = bpf_htons(payload);
     nb_update_csum(&cs, *((__u32*)old_doff), *((__u32*)new_doff));
     nb_update_csum(&cs, 0, *((__be32*)&toa));
     nb_update_csum(&cs, 0, toa.ip);
